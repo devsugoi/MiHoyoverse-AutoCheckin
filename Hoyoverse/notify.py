@@ -44,6 +44,7 @@ class Notify(object):
             self.PUSH_CONFIG = os.environ['PUSH_CONFIG']
         # Discord Webhook
         self.DISCORD_WEBHOOK = os.getenv('DISCORD_WEBHOOK')
+        self.DISCORD_WEBHOOK_SUMMARY = os.getenv('DISCORD_WEBHOOK_SUMMARY') # OPTIONAL, to separate the checkin details so that the main notif is short/summarized
 
     def pushTemplate(self, method, url, params=None, data=None, json=None, headers=None, **kwargs):
         name = kwargs.get('name')
@@ -97,18 +98,24 @@ class Notify(object):
         else:
             return self.pushTemplate('post', url, data=data, name=name, token='token', text=text, code=code)
 
-    def discordWebhook(self, text, status, desp, embed = True):
+    def discordWebhook(self, text, status, desp, embed = True, isSummary = False, embed_color = '03b2f8'):
         DISCORD_WEBHOOK = self.DISCORD_WEBHOOK
+        DISCORD_WEBHOOK_SUMMARY = self.DISCORD_WEBHOOK_SUMMARY
 
         if not DISCORD_WEBHOOK:
             log.info(f'Discord SKIPPED')
             return False
-
+        if not DISCORD_WEBHOOK_SUMMARY and isSummary:
+            log.info(f'Discord for optional Summary SKIPPED')
+            return False
+        elif DISCORD_WEBHOOK_SUMMARY != '' and isSummary:
+            DISCORD_WEBHOOK = DISCORD_WEBHOOK_SUMMARY
+            
         content = f'{desp}'
         webhook = DiscordWebhook(url=DISCORD_WEBHOOK, content=content)
         if embed:
             webhook = DiscordWebhook(url=DISCORD_WEBHOOK)
-            embed = DiscordEmbed(title=f'{text} {status}', description=desp, color='03b2f8')
+            embed = DiscordEmbed(title=f'{text} {status}', description=desp, color=embed_color)
             webhook.add_embed(embed)
         response = webhook.execute()
         if (response.status_code == 200):
@@ -117,7 +124,7 @@ class Notify(object):
             log.error(f'Discord FAILED\n{response}')
         return True
 
-    def send(self, app='Hoyo Sign-In', status='', msg='', embed=True, **kwargs):
+    def send(self, app='Hoyo Sign-In', status='', msg='', embed=True, isSummary = False, embed_color = '03b2f8', **kwargs):
         hide = kwargs.get('hide', '')
         if isinstance(msg, list) or isinstance(msg, dict):
             # msg = self.to_json(msg)
@@ -125,10 +132,10 @@ class Notify(object):
         if not hide:
             log.info(f'Sign-In result: {status}\n\n{msg}')
 
-        if self.PUSH_CONFIG or self.DISCORD_WEBHOOK:
+        if self.PUSH_CONFIG or self.DISCORD_WEBHOOK or self.DISCORD_WEBHOOK_SUMMARY:
             log.info('Sending push notifications...')
             self.custPush(app, status, msg)
-            self.discordWebhook(app, status, msg, embed)
+            self.discordWebhook(app, status, msg, embed, isSummary, embed_color)
         else:
             log.info('No social media notifications configured to be sent.')
 

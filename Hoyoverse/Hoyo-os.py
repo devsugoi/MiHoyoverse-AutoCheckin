@@ -32,15 +32,19 @@ if __name__ == '__main__':
 
     GAMES = []
     
-    if os.getenv('GI_OS_COOKIE') != '':
-        GAMES.append('GI')
-    if os.getenv('ZZZ_OS_COOKIE') != '':
-        GAMES.append('ZZZ')
+    # if os.getenv('GI_OS_COOKIE') != '':
+    #     GAMES.append('GI')
+    # if os.getenv('ZZZ_OS_COOKIE') != '':
+    #     GAMES.append('ZZZ')
     if os.getenv('HI3_OS_COOKIE') != '':
         GAMES.append('HI3') 
         
+    if os.getenv('DISCORD_WEBHOOK_SUMMARY') != '':
+        allow_summary = True
+        
     total_success_num: int = 0
-    total_fail_num: int = 0    
+    total_fail_num: int = 0  
+    msg_summary = ''  
     
     for game in GAMES:
         if game == 'GI':
@@ -78,11 +82,29 @@ if __name__ == '__main__':
             continue
         msg=f'**  -Number of successful sign-ins: {success_num} \n  -Number of failed sign-ins: {fail_num}**'
         msg_list.append(msg)
+        if allow_summary:
+            if game == 'GI':
+                msg_summary += f'\n  Genshin Impact: **{success_num}** Success and **{fail_num}** Fails'
+            if game == 'ZZZ':
+                msg_summary += f'\n  Zenless Zone Zero: **{success_num}** Success and **{fail_num}** Fails'
+            if game == 'HI3':
+                msg_summary += f'\n  Honkai Impact 3: **{success_num}** Success and **{fail_num}** Fails'
         
         total_success_num += success_num
         total_fail_num += fail_num
     
+    # Color coding to easily determine in discord embed if there is an error
+    if total_fail_num == 0:
+        color = '2ecc71' #green
+    elif total_fail_num > 0:
+        color = 'f1c40f' #yellow
+    elif ret != 0:
+        color = 'eb3324' #red
+    
     notify.send(status=f'\n  -Total number of successful sign-ins: {total_success_num} \n  -Total number of failed sign-ins: {total_fail_num}', msg=msg_list)
+    
+    if allow_summary:
+        notify.send(msg=msg_summary, isSummary=allow_summary, embed_color=color)
     
     if total_fail_num > 0:
         notify.send(msg="Error occured @everyone", embed=False)
