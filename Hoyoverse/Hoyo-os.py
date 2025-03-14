@@ -32,10 +32,10 @@ if __name__ == '__main__':
 
     GAMES = []
     
-    # if os.getenv('GI_OS_COOKIE') != '':
-    #     GAMES.append('GI')
-    # if os.getenv('ZZZ_OS_COOKIE') != '':
-    #     GAMES.append('ZZZ')
+    if os.getenv('GI_OS_COOKIE') != '':
+        GAMES.append('GI')
+    if os.getenv('ZZZ_OS_COOKIE') != '':
+        GAMES.append('ZZZ')
     if os.getenv('HI3_OS_COOKIE') != '':
         GAMES.append('HI3') 
         
