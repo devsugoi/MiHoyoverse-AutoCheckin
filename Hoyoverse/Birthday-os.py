@@ -19,6 +19,9 @@ if __name__ == '__main__':
         log.error("Birthday not set properly, please read the documentation on how to set up the birthdays.")
         raise Exception("Birthday set-up failure")
     
+    if os.getenv('DISCORD_WEBHOOK_SUMMARY') != '':
+        allow_summary = True
+    
     bday_list = BIRTHDAYS.split('#')
     log.info(f'Number of birthdays read: {len(bday_list)}')
     
@@ -39,5 +42,5 @@ if __name__ == '__main__':
                 f'Birthday na ni <@{bday_info[0]}> mga lodi @everyone',
                 f'mga lode @everyone batiin nyo naman ng Happy Birthday si <@{bday_info[0]}>'
             ]
-            notify.send(app='Birthday Greeting Helper', status='', msg=random.choice(greeting_list),embed=False)
+            notify.send(app='Birthday Greeting Helper', status='', msg=random.choice(greeting_list),embed=False, isSummary=allow_summary)
     

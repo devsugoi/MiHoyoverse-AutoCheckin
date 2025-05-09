@@ -107,7 +107,7 @@ if __name__ == '__main__':
         notify.send(msg=msg_summary, isSummary=allow_summary, embed_color=color)
     
     if total_fail_num > 0:
-        notify.send(msg="Error occured @everyone", embed=False)
+        notify.send(msg="Error occured @everyone", isSummary=allow_summary, embed=False)
     if ret != 0:
         log.error('program terminated with errors')
         exit(ret)
