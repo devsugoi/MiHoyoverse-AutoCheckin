@@ -32,11 +32,11 @@ if __name__ == '__main__':
 
     GAMES = []
     
-    if os.getenv('GI_OS_COOKIE') != '':
+    if os.getenv('GI_OS_COOKIE') != '' and os.getenv('GI_OS_COOKIE') is not None:
         GAMES.append('GI')
-    if os.getenv('ZZZ_OS_COOKIE') != '':
+    if os.getenv('ZZZ_OS_COOKIE') != '' and os.getenv('ZZZ_OS_COOKIE') is not None:
         GAMES.append('ZZZ')
-    if os.getenv('HI3_OS_COOKIE') != '':
+    if os.getenv('HI3_OS_COOKIE') != '' and os.getenv('HI3_OS_COOKIE') is not None:
         GAMES.append('HI3') 
         
     if os.getenv('DISCORD_WEBHOOK_SUMMARY') != '':
