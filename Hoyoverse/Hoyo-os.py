@@ -38,6 +38,8 @@ if __name__ == '__main__':
         GAMES.append('ZZZ')
     if os.getenv('HI3_OS_COOKIE') != '' and os.getenv('HI3_OS_COOKIE') is not None:
         GAMES.append('HI3') 
+    if os.getenv('HSR_OS_COOKIE') != '' and os.getenv('HSR_OS_COOKIE') is not None:
+        GAMES.append('HSR') 
         
     if os.getenv('DISCORD_WEBHOOK_SUMMARY') != '':
         allow_summary = True
@@ -51,6 +53,8 @@ if __name__ == '__main__':
             OS_COOKIE = os.getenv('GI_OS_COOKIE')
         elif game == 'ZZZ':
             OS_COOKIE = os.getenv('ZZZ_OS_COOKIE')
+        elif game == 'HSR':
+            OS_COOKIE = os.getenv('HSR_OS_COOKIE')
         else:
             OS_COOKIE = os.getenv('HI3_OS_COOKIE')
         if OS_COOKIE == '':
@@ -64,22 +68,24 @@ if __name__ == '__main__':
         success_num = fail_num = 0
         for i in range(len(cookie_list)):
             log.info(f'Preparing NO.{i + 1} Account Check-In...')
-            try:
-                #ltoken = cookie_list[i].split('ltoken=')[1].split(';')[0]
-                token = cookie_list[i].split('cookie_token=')[1].split(';')[0]
-                msg = f'	NO.{i + 1} Account:{Sign(cookie_list[i]).run(game=game)}'
-                msg_list.append(msg)
-                success_num = success_num + 1
-            except Exception as e:
-                if not token:
-                    log.error("Cookie token not found, please try to relog on the check-in page.")
+            # try:
+                # if game != 'HSR':
+                #     #ltoken = cookie_list[i].split('ltoken=')[1].split(';')[0]
+                #     token = cookie_list[i].split('cookie_token=')[1].split(';')[0] #Removed as some game(HSR) does not have cookie_token
+            msg = f'	NO.{i + 1} Account:{Sign(cookie_list[i]).run(game=game)}'
+            msg_list.append(msg)
+            success_num = success_num + 1
+            # except Exception as e:
+            #     if not token and game != 'HSR':
+            #         log.error("Cookie token not found, please try to relog on the check-in page.")
+            #     log.error(f'Check-In failed for NO.{i + 1} Account: {e}')
 
-                msg = f'	NO. {i + 1} Account:\n    {e}'
-                msg_list.append(msg)
-                fail_num = fail_num + 1
-                log.error(msg)
-                ret = -1
-            continue
+            #     msg = f'	NO. {i + 1} Account:\n    {e}'
+            #     msg_list.append(msg)
+            #     fail_num = fail_num + 1
+            #     log.error(msg)
+            #     ret = -1
+            # continue
         msg=f'**  -Number of successful sign-ins: {success_num} \n  -Number of failed sign-ins: {fail_num}**'
         msg_list.append(msg)
         if allow_summary:
@@ -89,6 +95,8 @@ if __name__ == '__main__':
                 msg_summary += f'\n  Zenless Zone Zero: **{success_num}** Success and **{fail_num}** Fails'
             if game == 'HI3':
                 msg_summary += f'\n  Honkai Impact 3: **{success_num}** Success and **{fail_num}** Fails'
+            if game == 'HSR':
+                msg_summary += f'\n  Honkai Star Rail: **{success_num}** Success and **{fail_num}** Fails'
         
         total_success_num += success_num
         total_fail_num += fail_num

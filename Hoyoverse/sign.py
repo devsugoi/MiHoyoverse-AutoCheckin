@@ -27,6 +27,13 @@ class Base(object):
                 'Cookie': self._cookie,
                 'x-rpc-signgame': 'zzz' # 11/10/2024 - additional request header for successful response
             }
+        elif game == 'HSR':
+            header = {
+                'User-Agent': CONFIG.HSR_WB_USER_AGENT,
+                'Referer': CONFIG.HSR_OS_REFERER_URL,
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
+                'Cookie': self._cookie
+            }
         else:
             header = {
                 'User-Agent': CONFIG.HI3_WB_USER_AGENT,
@@ -34,7 +41,6 @@ class Base(object):
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Cookie': self._cookie
             }
-        
         return header
 
 
@@ -48,13 +54,17 @@ class Roles(Base):
             elif game == 'ZZZ':
                 response = req.to_python(req.request(
                 'get', CONFIG.ZZZ_OS_REWARD_URL, headers=self.get_header(game=game)).text)
+            elif game == 'HSR':
+                response = req.to_python(req.request(
+                'get', CONFIG.HSR_OS_REWARD_URL, headers=self.get_header(game=game)).text)
             else:
                 response = req.to_python(req.request(
                 'get', CONFIG.HI3_OS_REWARD_URL, headers=self.get_header(game=game)).text)
         except json.JSONDecodeError as e:
             raise Exception(e)
         
-        # print('DEBUG: get_awards: ')
+        log.debug('get_awards response:')
+        log.debug(response)
         return response
 
     def get_roles(self, game='GI'):
@@ -66,6 +76,9 @@ class Roles(Base):
             elif game == 'ZZZ':
                 response = req.to_python(req.request(
                 'get', CONFIG.ZZZ_OS_ROLE_URL, headers=self.get_header(game=game)).text)
+            elif game == 'HSR':
+                response = req.to_python(req.request(
+                'get', CONFIG.HSR_OS_ROLE_URL, headers=self.get_header(game=game)).text)   
             else:
                 response = req.to_python(req.request(
                 'get', CONFIG.HI3_OS_ROLE_URL, headers=self.get_header(game=game)).text)
@@ -76,8 +89,6 @@ class Roles(Base):
             'retcode', 1) != 0 or response.get('data', None) is None:
             raise Exception(message)
 
-        # print('DEBUG: get_roles: ')
-        # print(response)
         return response
 
 
@@ -92,10 +103,14 @@ class Sign(Base):
     # def get_header(self): no override
 
     def get_info(self,game='GI'):
+        log.debug(f'get_info for {game}')
         index = 0
         user_game_roles = Roles(self._cookie).get_roles(game=game)
+        log.debug('user_game_roles')
+        log.debug(user_game_roles)
         role_list = user_game_roles.get('data', {}).get('list', [])
-
+        if game == 'HSR': # HSR is a special case as it uses different keys for the role list
+            role_list = [user_game_roles.get('data', {}).get('user_info', [])]
         # role list empty
         if not role_list:
             raise Exception(user_game_roles.get('message', 'Role list empty'))
@@ -133,6 +148,8 @@ class Sign(Base):
             info_url = CONFIG.GI_OS_INFO_URL
         elif game == 'ZZZ':
             info_url = CONFIG.ZZZ_OS_INFO_URL
+        elif game == 'HSR':
+            info_url = CONFIG.HSR_OS_INFO_URL
         else:
             info_url = CONFIG.HI3_OS_INFO_URL
         
@@ -170,6 +187,8 @@ class Sign(Base):
                 job = 'Traveler'
             elif game == 'ZZZ':
                 job = 'Proxy'
+            elif game == 'HSR':
+                job = 'Trailblazer'
             else:
                 job = 'Captain'
             
@@ -193,6 +212,9 @@ class Sign(Base):
             elif game == 'ZZZ':
                 OS_ACT_ID = CONFIG.ZZZ_OS_ACT_ID
                 OS_SIGN_URL = CONFIG.ZZZ_OS_SIGN_URL
+            elif game == 'HSR':
+                OS_ACT_ID = CONFIG.HSR_OS_ACT_ID
+                OS_SIGN_URL = CONFIG.HSR_OS_SIGN_URL
             else:
                 OS_ACT_ID = CONFIG.HI3_OS_ACT_ID
                 OS_SIGN_URL = CONFIG.HI3_OS_SIGN_URL
@@ -207,6 +229,8 @@ class Sign(Base):
             except Exception as e:
                 raise
             code = response.get('retcode', 99999)
+            log.debug('Sign response:')
+            log.debug(response)
             # 0:      success
             # -5003:  already checked in
             if code != 0:

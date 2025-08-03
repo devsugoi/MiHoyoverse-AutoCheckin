@@ -18,7 +18,7 @@ logging.basicConfig(
 log = logger = logging
 
 class _Config:
-    GIH_VERSION = '5.matt'
+    GIH_VERSION = '4.0'
     LOG_LEVEL = logging.INFO
     # LOG_LEVEL = logging.DEBUG
 
@@ -45,6 +45,15 @@ class _Config:
     ZZZ_OS_SIGN_URL = 'https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/sign?lang={}'.format(LANG) 
     ZZZ_WB_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E150'
     
+    # HSR
+    HSR_OS_ACT_ID = 'e202303301540311'
+    HSR_OS_REFERER_URL = 'https://act.hoyolab.com/bbs/event/signin/hkrpg/{}.html?act_id={}'.format(HSR_OS_ACT_ID,HSR_OS_ACT_ID)
+    HSR_OS_REWARD_URL = 'https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/home?lang={}&act_id={}'.format(LANG, HSR_OS_ACT_ID)
+    HSR_OS_ROLE_URL = 'https://bbs-api-os.hoyolab.com/community/painter/wapi/user/full'
+    HSR_OS_INFO_URL = 'https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/info?lang={}&act_id={}'.format(LANG, HSR_OS_ACT_ID) 
+    HSR_OS_SIGN_URL = 'https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/sign'
+    HSR_WB_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E150'
+    
     # HI3
     HI3_OS_ACT_ID = 'e202110291205111'
     HI3_GAME_BIZ = 'bh3_global'
@@ -52,7 +61,7 @@ class _Config:
     HI3_OS_REWARD_URL = 'https://sg-public-api.hoyolab.com/event/mani/home?lang={}&act_id={}'.format(LANG, HI3_OS_ACT_ID) #May-05-2024 - Changed from api-os-takumi.mihoyo.com
     HI3_OS_ROLE_URL = 'https://api-os-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz={}'.format(HI3_GAME_BIZ)
     HI3_OS_INFO_URL = 'https://sg-public-api.hoyolab.com/event/mani/info?lang={}&act_id={}'.format(LANG, HI3_OS_ACT_ID) #May-05-2024 - Changed from api-os-takumi.mihoyo.com
-    HI3_OS_SIGN_URL = 'https://sg-public-api.mihoyo.com/event/mani/sign?lang={}'.format(LANG) #May-09-2024 - Changed from api-os-takumi.mihoyo.com
+    HI3_OS_SIGN_URL = 'https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/info?lang=en-us&act_id=e202303301540311={}'.format(LANG) #May-09-2024 - Changed from api-os-takumi.mihoyo.com
     HI3_WB_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E150'
 
 class HttpRequest(object):

@@ -5,6 +5,8 @@ from settings import log, req
 
 load_dotenv()
 
+# Nothing to futher add here for adding new games, as this is just a notification handler.
+
 class Notify(object):
     # """
     # :param PUSH_CONFIG: JSON-formatted parameters for creating a web request to a user-specified social media API.
@@ -52,7 +54,6 @@ class Notify(object):
         token = kwargs.get('token')
         text = kwargs.get('text')
         code = kwargs.get('code')
-        #print("DEBUG: code = " + code)
         if not token:
             log.info(f'{name} SKIPPED')
             return False
