@@ -35,7 +35,7 @@ class Base(object):
                 'Cookie': self._cookie
             }
         else:
-            header = {
+            header = { # expected return is {"retcode":0,"message":"OK","data":{"code":"ok"}}
                 'User-Agent': CONFIG.HI3_WB_USER_AGENT,
                 'Referer': CONFIG.HI3_OS_REFERER_URL,
                 'Accept-Encoding': 'gzip, deflate, br',
@@ -172,7 +172,7 @@ class Sign(Base):
             uid = str(self._uid).replace(
                 str(self._uid)[1:7], ' ▓ ▓ ▓ ▓ ▓ ▓ ▓ ', 1)
 
-            time.sleep(10)
+            time.sleep(5)
             message = {
                 'today': today,
                 'region_name': self._region_name,

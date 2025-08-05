@@ -61,7 +61,7 @@ class _Config:
     HI3_OS_REWARD_URL = 'https://sg-public-api.hoyolab.com/event/mani/home?lang={}&act_id={}'.format(LANG, HI3_OS_ACT_ID) #May-05-2024 - Changed from api-os-takumi.mihoyo.com
     HI3_OS_ROLE_URL = 'https://api-os-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz={}'.format(HI3_GAME_BIZ)
     HI3_OS_INFO_URL = 'https://sg-public-api.hoyolab.com/event/mani/info?lang={}&act_id={}'.format(LANG, HI3_OS_ACT_ID) #May-05-2024 - Changed from api-os-takumi.mihoyo.com
-    HI3_OS_SIGN_URL = 'https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/info?lang=en-us&act_id=e202303301540311={}'.format(LANG) #May-09-2024 - Changed from api-os-takumi.mihoyo.com
+    HI3_OS_SIGN_URL = 'https://sg-public-api.hoyolab.com/event/mani/sign'
     HI3_WB_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E150'
 
 class HttpRequest(object):
