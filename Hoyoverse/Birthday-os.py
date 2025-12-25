@@ -30,12 +30,12 @@ if __name__ == '__main__':
     # Loop each item in the list
     for bday in bday_list:
         bday_info = bday.split(';')
-        
         # Check if the item is not for ordinary birthday but for a custom announcement
-        if bday_info[0] == '!' and today.strftime("%Y/%m/%d") == bday_info[1]:
-            notify.send(app='Birthday Greeting Helper', status='', msg=bday_info[2],embed=False, isSummary=allow_summary)
-        
-        elif today.strftime("%m/%d") == bday_info[1][-5:]:
+        if bday_info[0] == '!' and (today.strftime("%Y/%m/%d") == bday_info[1].strip()
+                                    or (bday_info[1].strip()[:4] == "XXXX" and today.strftime("%m/%d") == bday_info[1].strip()[-5:])):
+            notify.send(app='Birthday Greeting Helper', status='', msg=bday_info[2].strip(),embed=False, isSummary=allow_summary)
+
+        elif today.strftime("%m/%d") == bday_info[1].strip()[-5:]:
             greeting_list = [
                 f'Happy Birthday lods <@{bday_info[0]}>!',
                 f'Balita ko bday mo lode ah <@{bday_info[0]}>',
