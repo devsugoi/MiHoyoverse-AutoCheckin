@@ -61,7 +61,8 @@ class Roles(Base):
                 response = req.to_python(req.request(
                 'get', CONFIG.HI3_OS_REWARD_URL, headers=self.get_header(game=game)).text)
         except json.JSONDecodeError as e:
-            raise Exception(e)
+            # raise Exception(e)
+            return e.message
         
         log.debug('get_awards response:')
         log.debug(response)
@@ -84,10 +85,11 @@ class Roles(Base):
                 'get', CONFIG.HI3_OS_ROLE_URL, headers=self.get_header(game=game)).text)
             message = response['message']
         except Exception as e:
-            raise Exception(e)
+            return response
         if response.get(
             'retcode', 1) != 0 or response.get('data', None) is None:
-            raise Exception(message)
+            # raise Exception(message)
+            return response
 
         return response
 
@@ -159,7 +161,8 @@ class Sign(Base):
             return req.to_python(response)
         except Exception as e:
             log.error('failure in get_info')
-            raise
+            # raise
+            return e.message
 
     def run(self, game="GI"):
         info_list = self.get_info(game=game)
@@ -227,7 +230,8 @@ class Sign(Base):
                     'post', OS_SIGN_URL, headers=self.get_header(game=game),
                     data=json.dumps(data, ensure_ascii=False)).text)
             except Exception as e:
-                raise
+                # raise
+                return e.message
             code = response.get('retcode', 99999)
             log.debug('Sign response:')
             log.debug(response)

@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from settings import log, CONFIG
 from sign import Sign
 from notify import Notify
+import threading
 
 load_dotenv()
 
@@ -47,75 +48,73 @@ if __name__ == '__main__':
     total_success_num: int = 0
     total_fail_num: int = 0  
     msg_summary = ''  
-    
-    for game in GAMES:
-        if game == 'GI':
-            OS_COOKIE = os.getenv('GI_OS_COOKIE')
-        elif game == 'ZZZ':
-            OS_COOKIE = os.getenv('ZZZ_OS_COOKIE')
-        elif game == 'HSR':
-            OS_COOKIE = os.getenv('HSR_OS_COOKIE')
-        else:
-            OS_COOKIE = os.getenv('HI3_OS_COOKIE')
-        if OS_COOKIE == '':
-            log.error("Cookie not set properly, please read a documentation on how to set and format your cookie.")
-            raise Exception("Cookie failure")
-        cookie_list = OS_COOKIE.split('#')
-        log.info(f'Number of account cookies read: {len(cookie_list)}')
-        log.info(f'Game: {game}')
-        msg=f'**Game: {game}**'
-        msg_list.append(msg)
-        success_num = fail_num = 0
-        for i in range(len(cookie_list)):
-            log.info(f'Preparing NO.{i + 1} Account Check-In...')
-            # try:
-                # if game != 'HSR':
-                #     #ltoken = cookie_list[i].split('ltoken=')[1].split(';')[0]
-                #     token = cookie_list[i].split('cookie_token=')[1].split(';')[0] #Removed as some game(HSR) does not have cookie_token
-            msg = f'	NO.{i + 1} Account:{Sign(cookie_list[i]).run(game=game)}'
-            msg_list.append(msg)
-            success_num = success_num + 1
-            # except Exception as e:
-            #     if not token and game != 'HSR':
-            #         log.error("Cookie token not found, please try to relog on the check-in page.")
-            #     log.error(f'Check-In failed for NO.{i + 1} Account: {e}')
-
-            #     msg = f'	NO. {i + 1} Account:\n    {e}'
-            #     msg_list.append(msg)
-            #     fail_num = fail_num + 1
-            #     log.error(msg)
-            #     ret = -1
-            # continue
-        msg=f'**  -Number of successful sign-ins: {success_num} \n  -Number of failed sign-ins: {fail_num}**'
-        msg_list.append(msg)
-        if allow_summary:
+    try:
+        for game in GAMES:
             if game == 'GI':
-                msg_summary += f'\n  Genshin Impact: **{success_num}** Success and **{fail_num}** Fails'
-            if game == 'ZZZ':
-                msg_summary += f'\n  Zenless Zone Zero: **{success_num}** Success and **{fail_num}** Fails'
-            if game == 'HI3':
-                msg_summary += f'\n  Honkai Impact 3: **{success_num}** Success and **{fail_num}** Fails'
-            if game == 'HSR':
-                msg_summary += f'\n  Honkai Star Rail: **{success_num}** Success and **{fail_num}** Fails'
+                OS_COOKIE = os.getenv('GI_OS_COOKIE')
+            elif game == 'ZZZ':
+                OS_COOKIE = os.getenv('ZZZ_OS_COOKIE')
+            elif game == 'HSR':
+                OS_COOKIE = os.getenv('HSR_OS_COOKIE')
+            else:
+                OS_COOKIE = os.getenv('HI3_OS_COOKIE')
+            if OS_COOKIE == '':
+                log.error("Cookie not set properly, please read a documentation on how to set and format your cookie.")
+                raise Exception("Cookie failure")
+            cookie_list = OS_COOKIE.split('#')
+            log.info(f'Number of account cookies read: {len(cookie_list)}')
+            log.info(f'Game: {game}')
+            msg=f'**Game: {game}**'
+            msg_list.append(msg)
+            success_num = fail_num = 0
+            
+            for i in range(len(cookie_list)):
+                try:
+                    log.info(f'Preparing NO.{i + 1} Account Check-In...')
+                    msg = f'	NO.{i + 1} Account:{Sign(cookie_list[i]).run(game=game)}'
+                    msg_list.append(msg)
+                    success_num = success_num + 1
+                except Exception as e:
+                    log.debug('Error occurred during sign-in process:')
+                    log.debug(e)
+                    msg_list.append('Failed to check in this account.')
+                    fail_num = fail_num + 1
+                
+            msg=f'**  -Number of successful sign-ins: {success_num} \n  -Number of failed sign-ins: {fail_num}**'
+            msg_list.append(msg)
+            if allow_summary:
+                if game == 'GI':
+                    msg_summary += f'\n  Genshin Impact: **{success_num}** Success and **{fail_num}** Fails'
+                if game == 'ZZZ':
+                    msg_summary += f'\n  Zenless Zone Zero: **{success_num}** Success and **{fail_num}** Fails'
+                if game == 'HI3':
+                    msg_summary += f'\n  Honkai Impact 3: **{success_num}** Success and **{fail_num}** Fails'
+                if game == 'HSR':
+                    msg_summary += f'\n  Honkai Star Rail: **{success_num}** Success and **{fail_num}** Fails'
+            
+            total_success_num += success_num
+            total_fail_num += fail_num
         
-        total_success_num += success_num
-        total_fail_num += fail_num
-    
-    # Color coding to easily determine in discord embed if there is an error
-    if total_fail_num == 0:
-        color = '2ecc71' #green
-    elif total_fail_num > 0:
-        color = 'f1c40f' #yellow
-    elif ret != 0:
-        color = 'eb3324' #red
-    
-    notify.send(status=f'\n  -Total number of successful sign-ins: {total_success_num} \n  -Total number of failed sign-ins: {total_fail_num}', msg=msg_list)
-    
-    if allow_summary:
-        notify.send(msg=msg_summary, isSummary=allow_summary, embed_color=color)
-    
-    if total_fail_num > 0:
-        notify.send(msg="Error occured @everyone", isSummary=allow_summary, embed=False)
+        # Color coding to easily determine in discord embed if there is an error
+        if total_fail_num == 0:
+            color = '2ecc71' #green
+        elif total_fail_num > 0:
+            color = 'f1c40f' #yellow
+        elif ret != 0:
+            color = 'eb3324' #red
+        
+        notify.send(status=f'\n  -Total number of successful sign-ins: {total_success_num} \n  -Total number of failed sign-ins: {total_fail_num}', msg=msg_list)
+        
+        if allow_summary:
+            notify.send(msg=msg_summary, isSummary=allow_summary, embed_color=color)
+        
+        if total_fail_num > 0:
+            notify.send(msg="Error occured @everyone", isSummary=allow_summary, embed=False)
+    except Exception as e:
+        log.error('An error occurred during the check-in process:')
+        log.error(e)
+        ret = 1
+        
     if ret != 0:
         log.error('program terminated with errors')
         exit(ret)
