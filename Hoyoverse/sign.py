@@ -1,5 +1,6 @@
 import time
 import json
+import re
 from settings import log, CONFIG, req
 
 
@@ -104,6 +105,13 @@ class Sign(Base):
         #print("DEBUG: init")
     # def get_header(self): no override
 
+    def _parse_account_id(self):
+        for key in ('account_id', 'account_id_v2'):
+            match = re.search(rf'{key}=([^;\s]+)', self._cookie)
+            if match:
+                return match.group(1)
+        raise Exception('Cookie missing account_id or account_id_v2')
+
     def get_info(self,game='GI'):
         log.debug(f'get_info for {game}')
         index = 0
@@ -141,9 +149,9 @@ class Sign(Base):
         self._level = role_list[index].get('level', 'NA')
         self._nick_name = role_list[index].get('nickname', 'NA')            
 
-        aid = self._cookie.split('account_id=')[1].split(';')[0]
-        aid = str(aid).replace(
-            str(aid)[1:len(aid)-1], ' ▓ ▓ ▓ ▓ ▓ ▓ ', 1)
+        aid = self._parse_account_id()
+        if len(aid) > 2:
+            aid = str(aid).replace(str(aid)[1:len(aid)-1], ' ▓ ▓ ▓ ▓ ▓ ▓ ', 1)
         log.info(f'Checking in account id {aid}...')
         
         if game == 'GI':

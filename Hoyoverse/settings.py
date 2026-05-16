@@ -15,10 +15,10 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s %(message)s',
     datefmt='%Y-%m-%dT%H:%M:%S')
 
-log = logger = logging
+log = logger = logging.getLogger()
 
 class _Config:
-    GIH_VERSION = '4.0'
+    GIH_VERSION = '4.1'
     LOG_LEVEL = logging.INFO
     # LOG_LEVEL = logging.DEBUG
 
@@ -97,7 +97,7 @@ class HttpRequest(object):
 
 req = HttpRequest()
 CONFIG = _Config()
-log.basicConfig(level=CONFIG.LOG_LEVEL)
+log.setLevel(CONFIG.LOG_LEVEL)
 if os.getenv('ZZZ_USER_AGENT'):
     CONFIG.WB_USER_AGENT = os.getenv('ZZZ_USER_AGENT')
 
