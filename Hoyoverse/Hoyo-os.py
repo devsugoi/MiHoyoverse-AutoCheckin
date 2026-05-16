@@ -61,7 +61,7 @@ if __name__ == '__main__':
             if OS_COOKIE == '':
                 log.error("Cookie not set properly, please read a documentation on how to set and format your cookie.")
                 raise Exception("Cookie failure")
-            cookie_list = OS_COOKIE.split('#')
+            cookie_list = [cookie.strip() for cookie in OS_COOKIE.split('#') if cookie.strip()]
             log.info(f'Number of account cookies read: {len(cookie_list)}')
             log.info(f'Game: {game}')
             msg=f'**Game: {game}**'
