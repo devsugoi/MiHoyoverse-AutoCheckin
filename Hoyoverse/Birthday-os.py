@@ -51,7 +51,20 @@ if __name__ == '__main__':
                 f'Maligayang Birthday <@{bday_info[0]}>',
                 f'Happy na Birthday mo pa <@{bday_info[0]}>',
                 f'Birthday na ni <@{bday_info[0]}> mga lodi @everyone',
-                f'mga lode @everyone batiin nyo naman ng Happy Birthday si <@{bday_info[0]}>'
+                f'mga lode @everyone batiin nyo naman ng Happy Birthday si <@{bday_info[0]}>',
+                f'Uy lods <@{bday_info[0]}>, isa ka na namang taong gulang. Happy Birthday!',
+                f'Petmalu lods <@{bday_info[0]}>, Happy Birthday!',
+                f'Happy Birthday idol <@{bday_info[0]}>, sana all may birthday ngayon',
+                f'Lods <@{bday_info[0]}> saan ang handaan? Happy Birthday!',
+                f'Libre mo naman kami lods <@{bday_info[0]}>, birthday mo daw eh',
+                f'Wish ko lang masaya ka lods <@{bday_info[0]}>, Happy Birthday!',
+                f'Isang taon na naman ang nadagdag sa pagka-lodi mo <@{bday_info[0]}>, HBD!',
+                f'Attention mga lods @everyone, birthday ngayon ni idol <@{bday_info[0]}>!',
+                f'Sabi ng kalendaryo ko bday mo raw ngayon lods <@{bday_info[0]}>, Happy Birthday!',
+                f'Happy Birthday lods <@{bday_info[0]}>! Sana marami kang matanggap na regalo',
+                f'Walang tatalo sa lodi kong si <@{bday_info[0]}>, Happy Birthday boss!',
+                f'Level up na naman si lods <@{bday_info[0]}>! Happy Birthday!',
+                f'Kain tayo lods <@{bday_info[0]}>! Birthday mo naman diba? HBD!'
             ]
             notify.send(app='Birthday Greeting Helper', status='', msg=random.choice(greeting_list),embed=False, isSummary=allow_summary)
     
