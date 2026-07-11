@@ -110,14 +110,16 @@ class Notify(object):
             log.info(f'Discord for optional Summary SKIPPED')
             return False
         elif DISCORD_WEBHOOK_SUMMARY != '' and isSummary:
+            # summary messages are routed to the dedicated summary webhook
+            # instead of the main one
             DISCORD_WEBHOOK = DISCORD_WEBHOOK_SUMMARY
             
-        content = f'{desp}'
-        webhook = DiscordWebhook(url=DISCORD_WEBHOOK, content=content)
         if embed:
             webhook = DiscordWebhook(url=DISCORD_WEBHOOK)
             embed = DiscordEmbed(title=f'{text} {status}', description=desp, color=embed_color)
             webhook.add_embed(embed)
+        else:
+            webhook = DiscordWebhook(url=DISCORD_WEBHOOK, content=f'{desp}')
         response = webhook.execute()
         if (response.status_code == 200):
             log.info(f'Discord SUCCESS')

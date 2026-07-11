@@ -2,7 +2,6 @@
 import logging
 import json
 import requests
-import os
 from dotenv import load_dotenv
 from requests.exceptions import HTTPError
 
@@ -65,6 +64,10 @@ class _Config:
     HI3_WB_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E150'
 
 class HttpRequest(object):
+    def __init__(self):
+        # one shared session so TLS connections are reused across requests
+        self._session = requests.Session()
+
     @staticmethod
     def to_python(json_str: str):
         return json.loads(json_str)
@@ -75,16 +78,19 @@ class HttpRequest(object):
 
     def request(self, method, url, max_retry: int = 2,
             params=None, data=None, json=None, headers=None, **kwargs):
+        kwargs.setdefault('timeout', 30)  # don't let a hung connection stall the whole run
+        # retries up to max_retry extra times; the for/else returns the response
+        # as soon as one attempt completes without raising
         for i in range(max_retry + 1):
             try:
-                s = requests.Session()
-                response = s.request(method, url, params=params,
+                # drop cookies the server set on earlier responses so they can't
+                # override the per-account Cookie header or leak across accounts
+                self._session.cookies.clear()
+                response = self._session.request(method, url, params=params,
                     data=data, json=json, headers=headers, **kwargs)
+                response.raise_for_status()  # treat 4xx/5xx as failures so they get retried
             except HTTPError as e:
                 log.error(f'HTTP error:\n{e}')
-                log.error(f'The NO.{i + 1} request failed, retrying...')
-            except KeyError as e:
-                log.error(f'Wrong response:\n{e}')
                 log.error(f'The NO.{i + 1} request failed, retrying...')
             except Exception as e:
                 log.error(f'Unknown error:\n{e}')
@@ -98,8 +104,6 @@ class HttpRequest(object):
 req = HttpRequest()
 CONFIG = _Config()
 log.setLevel(CONFIG.LOG_LEVEL)
-if os.getenv('ZZZ_USER_AGENT'):
-    CONFIG.WB_USER_AGENT = os.getenv('ZZZ_USER_AGENT')
 
 MESSAGE_TEMPLATE = '''
     {today:#^28}

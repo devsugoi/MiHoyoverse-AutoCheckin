@@ -14,20 +14,23 @@ if __name__ == '__main__':
     today = datetime.now()
     
     # Check first if an environment variable belonging for the birthday script exists
-    if os.getenv('BIRTHDAYS') != '':
-        BIRTHDAYS = os.getenv('BIRTHDAYS')
-    else:
+    BIRTHDAYS = os.getenv('BIRTHDAYS')
+    if not BIRTHDAYS:
         log.error("Birthday not set properly, please read the documentation on how to set up the birthdays.")
         raise Exception("Birthday set-up failure")
-    
-    if os.getenv('DISCORD_WEBHOOK_SUMMARY') != '':
-        allow_summary = True
+
+    # os.getenv returns None when the var is missing, so bool() covers both
+    # an unset and an empty DISCORD_WEBHOOK_SUMMARY
+    allow_summary = bool(os.getenv('DISCORD_WEBHOOK_SUMMARY'))
     
     # Divide the birthday list in the environment folder
     bday_list = BIRTHDAYS.split('#')
     log.info(f'Number of birthdays read: {len(bday_list)}')
     
-    # Loop each item in the list
+    # Each entry in BIRTHDAYS is one of:
+    #   <discord_user_id>;<YYYY/MM/DD>  -> birthday greeting (year is ignored, only MM/DD is compared)
+    #   !;<date>;<message>              -> custom announcement; date is YYYY/MM/DD for a one-off,
+    #                                      or XXXX/MM/DD to repeat it every year
     for bday in bday_list:
         bday_info = bday.split(';')
         # Check if the item is not for ordinary birthday but for a custom announcement

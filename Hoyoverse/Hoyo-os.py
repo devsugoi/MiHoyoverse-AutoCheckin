@@ -3,9 +3,16 @@ from dotenv import load_dotenv
 from settings import log, CONFIG
 from sign import Sign
 from notify import Notify
-import threading
 
 load_dotenv()
+
+# Display names used in the summary notification
+GAME_NAMES = {
+    'GI': 'Genshin Impact',
+    'ZZZ': 'Zenless Zone Zero',
+    'HI3': 'Honkai Impact 3',
+    'HSR': 'Honkai Star Rail',
+}
 
 if __name__ == '__main__':
     log.info(f'Hoyo Check-In Helper v{CONFIG.GIH_VERSION}')
@@ -28,37 +35,22 @@ if __name__ == '__main__':
     #         Separate cookies for multiple accounts with the hash symbol #
     #         e.g. cookie1text#cookie2text
     
-    OS_COOKIE = ''
-    token = ''
+    # A game is only checked in when its cookie env var exists and is non-empty
+    GAMES = [game for game in ('GI', 'ZZZ', 'HI3', 'HSR')
+             if os.getenv(f'{game}_OS_COOKIE')]
 
-    GAMES = []
-    
-    if os.getenv('GI_OS_COOKIE') != '' and os.getenv('GI_OS_COOKIE') is not None:
-        GAMES.append('GI')
-    if os.getenv('ZZZ_OS_COOKIE') != '' and os.getenv('ZZZ_OS_COOKIE') is not None:
-        GAMES.append('ZZZ')
-    if os.getenv('HI3_OS_COOKIE') != '' and os.getenv('HI3_OS_COOKIE') is not None:
-        GAMES.append('HI3') 
-    if os.getenv('HSR_OS_COOKIE') != '' and os.getenv('HSR_OS_COOKIE') is not None:
-        GAMES.append('HSR') 
-        
-    if os.getenv('DISCORD_WEBHOOK_SUMMARY') != '':
-        allow_summary = True
-        
+    # os.getenv returns None when the var is missing, so bool() covers both
+    # an unset and an empty DISCORD_WEBHOOK_SUMMARY
+    allow_summary = bool(os.getenv('DISCORD_WEBHOOK_SUMMARY'))
+
+
     total_success_num: int = 0
     total_fail_num: int = 0  
     msg_summary = ''  
     try:
         for game in GAMES:
-            if game == 'GI':
-                OS_COOKIE = os.getenv('GI_OS_COOKIE')
-            elif game == 'ZZZ':
-                OS_COOKIE = os.getenv('ZZZ_OS_COOKIE')
-            elif game == 'HSR':
-                OS_COOKIE = os.getenv('HSR_OS_COOKIE')
-            else:
-                OS_COOKIE = os.getenv('HI3_OS_COOKIE')
-            if OS_COOKIE == '':
+            OS_COOKIE = os.getenv(f'{game}_OS_COOKIE')
+            if not OS_COOKIE:
                 log.error("Cookie not set properly, please read a documentation on how to set and format your cookie.")
                 raise Exception("Cookie failure")
             cookie_list = [cookie.strip() for cookie in OS_COOKIE.split('#') if cookie.strip()]
@@ -68,10 +60,10 @@ if __name__ == '__main__':
             msg_list.append(msg)
             success_num = fail_num = 0
             
-            for i in range(len(cookie_list)):
+            for i, cookie in enumerate(cookie_list, 1):
                 try:
-                    log.info(f'Preparing NO.{i + 1} Account Check-In...')
-                    msg = f'	NO.{i + 1} Account:{Sign(cookie_list[i]).run(game=game)}'
+                    log.info(f'Preparing NO.{i} Account Check-In...')
+                    msg = f'	NO.{i} Account:{Sign(cookie).run(game=game)}'
                     msg_list.append(msg)
                     success_num = success_num + 1
                 except Exception as e:
@@ -83,14 +75,7 @@ if __name__ == '__main__':
             msg=f'**  -Number of successful sign-ins: {success_num} \n  -Number of failed sign-ins: {fail_num}**'
             msg_list.append(msg)
             if allow_summary:
-                if game == 'GI':
-                    msg_summary += f'\n  Genshin Impact: **{success_num}** Success and **{fail_num}** Fails'
-                if game == 'ZZZ':
-                    msg_summary += f'\n  Zenless Zone Zero: **{success_num}** Success and **{fail_num}** Fails'
-                if game == 'HI3':
-                    msg_summary += f'\n  Honkai Impact 3: **{success_num}** Success and **{fail_num}** Fails'
-                if game == 'HSR':
-                    msg_summary += f'\n  Honkai Star Rail: **{success_num}** Success and **{fail_num}** Fails'
+                msg_summary += f'\n  {GAME_NAMES[game]}: **{success_num}** Success and **{fail_num}** Fails'
             
             total_success_num += success_num
             total_fail_num += fail_num
@@ -98,10 +83,8 @@ if __name__ == '__main__':
         # Color coding to easily determine in discord embed if there is an error
         if total_fail_num == 0:
             color = '2ecc71' #green
-        elif total_fail_num > 0:
+        else:
             color = 'f1c40f' #yellow
-        elif ret != 0:
-            color = 'eb3324' #red
         
         notify.send(status=f'\n  -Total number of successful sign-ins: {total_success_num} \n  -Total number of failed sign-ins: {total_fail_num}', msg=msg_list)
         

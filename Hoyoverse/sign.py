@@ -3,6 +3,9 @@ import json
 import re
 from settings import log, CONFIG, req
 
+# What each game calls the player, used in the check-in status message
+JOB_TITLES = {'GI': 'Traveler', 'ZZZ': 'Proxy', 'HSR': 'Trailblazer', 'HI3': 'Captain'}
+
 
 class Base(object):
     def __init__(self, cookies: str = None):
@@ -13,85 +16,43 @@ class Base(object):
 
     # set headers based on the game for check in
     def get_header(self, game='GI'):
-        if game == 'GI':
-            header = {
-                'User-Agent': CONFIG.GI_WB_USER_AGENT,
-                'Referer': CONFIG.GI_OS_REFERER_URL,
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Cookie': self._cookie
-            } 
-        elif game == 'ZZZ':
-            header = {
-                'User-Agent': CONFIG.ZZZ_WB_USER_AGENT,
-                'Referer': CONFIG.ZZZ_OS_REFERER_URL,
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Cookie': self._cookie,
-                'x-rpc-signgame': 'zzz' # 11/10/2024 - additional request header for successful response
-            }
-        elif game == 'HSR':
-            header = {
-                'User-Agent': CONFIG.HSR_WB_USER_AGENT,
-                'Referer': CONFIG.HSR_OS_REFERER_URL,
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Cookie': self._cookie
-            }
-        else:
-            header = { # expected return is {"retcode":0,"message":"OK","data":{"code":"ok"}}
-                'User-Agent': CONFIG.HI3_WB_USER_AGENT,
-                'Referer': CONFIG.HI3_OS_REFERER_URL,
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Cookie': self._cookie
-            }
+        # per-game user agent / referer live in CONFIG as
+        # <GAME>_WB_USER_AGENT and <GAME>_OS_REFERER_URL
+        header = {
+            'User-Agent': getattr(CONFIG, f'{game}_WB_USER_AGENT'),
+            'Referer': getattr(CONFIG, f'{game}_OS_REFERER_URL'),
+            'Accept-Encoding': 'gzip, deflate, br, zstd' if game in ('ZZZ', 'HSR') else 'gzip, deflate, br',
+            'Cookie': self._cookie
+        }
+        if game == 'ZZZ':
+            header['x-rpc-signgame'] = 'zzz' # 11/10/2024 - additional request header for successful response
         return header
 
 
 class Roles(Base):
     def get_awards(self, game='GI'):
-        response = {}
         try:
-            if game == 'GI':
-                response = req.to_python(req.request(
-                'get', CONFIG.GI_OS_REWARD_URL, headers=self.get_header(game=game)).text)
-            elif game == 'ZZZ':
-                response = req.to_python(req.request(
-                'get', CONFIG.ZZZ_OS_REWARD_URL, headers=self.get_header(game=game)).text)
-            elif game == 'HSR':
-                response = req.to_python(req.request(
-                'get', CONFIG.HSR_OS_REWARD_URL, headers=self.get_header(game=game)).text)
-            else:
-                response = req.to_python(req.request(
-                'get', CONFIG.HI3_OS_REWARD_URL, headers=self.get_header(game=game)).text)
+            response = req.to_python(req.request(
+                'get', getattr(CONFIG, f'{game}_OS_REWARD_URL'),
+                headers=self.get_header(game=game)).text)
         except json.JSONDecodeError as e:
-            # raise Exception(e)
-            return e.message
-        
+            log.error(f'get_awards response was not valid JSON: {e}')
+            return {}
+
         log.debug('get_awards response:')
         log.debug(response)
         return response
 
     def get_roles(self, game='GI'):
+        # callers check retcode/data themselves, so failures just return
+        # whatever we have (an empty dict when the request itself failed)
         response = {}
         try:
-            if game == 'GI':
-                response = req.to_python(req.request(
-                'get', CONFIG.GI_OS_ROLE_URL, headers=self.get_header(game=game)).text)
-            elif game == 'ZZZ':
-                response = req.to_python(req.request(
-                'get', CONFIG.ZZZ_OS_ROLE_URL, headers=self.get_header(game=game)).text)
-            elif game == 'HSR':
-                response = req.to_python(req.request(
-                'get', CONFIG.HSR_OS_ROLE_URL, headers=self.get_header(game=game)).text)   
-            else:
-                response = req.to_python(req.request(
-                'get', CONFIG.HI3_OS_ROLE_URL, headers=self.get_header(game=game)).text)
-            message = response['message']
+            response = req.to_python(req.request(
+                'get', getattr(CONFIG, f'{game}_OS_ROLE_URL'),
+                headers=self.get_header(game=game)).text)
         except Exception as e:
-            return response
-        if response.get(
-            'retcode', 1) != 0 or response.get('data', None) is None:
-            # raise Exception(message)
-            return response
-
+            log.error(f'get_roles request failed: {e}')
         return response
 
 
@@ -106,6 +67,7 @@ class Sign(Base):
     # def get_header(self): no override
 
     def _parse_account_id(self):
+        # newer HoYoLAB cookies store the id under account_id_v2 instead of account_id
         for key in ('account_id', 'account_id_v2'):
             match = re.search(rf'{key}=([^;\s]+)', self._cookie)
             if match:
@@ -136,6 +98,8 @@ class Sign(Base):
                                 for i in role_list]
         '''
         
+        # If the account has characters on multiple servers, report the
+        # highest-level one in the check-in message
         if len(role_list) != 1:
             highest_level = role_list[0].get('level', 'NA')
             
@@ -150,27 +114,21 @@ class Sign(Base):
         self._nick_name = role_list[index].get('nickname', 'NA')            
 
         aid = self._parse_account_id()
+        # mask the account id before logging: keep only the first and last character
         if len(aid) > 2:
             aid = str(aid).replace(str(aid)[1:len(aid)-1], ' ▓ ▓ ▓ ▓ ▓ ▓ ', 1)
         log.info(f'Checking in account id {aid}...')
         
-        if game == 'GI':
-            info_url = CONFIG.GI_OS_INFO_URL
-        elif game == 'ZZZ':
-            info_url = CONFIG.ZZZ_OS_INFO_URL
-        elif game == 'HSR':
-            info_url = CONFIG.HSR_OS_INFO_URL
-        else:
-            info_url = CONFIG.HI3_OS_INFO_URL
-        
+        info_url = getattr(CONFIG, f'{game}_OS_INFO_URL')
+
         try:
             response = req.request(
                 'get', info_url, headers=self.get_header(game=game)).text
             return req.to_python(response)
-        except Exception as e:
+        except Exception:
             log.error('failure in get_info')
-            # raise
-            return e.message
+            # let the per-account handler in Hoyo-os.py log it and count the failure
+            raise
 
     def run(self, game="GI"):
         info_list = self.get_info(game=game)
@@ -180,10 +138,10 @@ class Sign(Base):
             today = info_list.get('data',{}).get('today')
             total_sign_day = info_list.get('data',{}).get('total_sign_day')
             awards = Roles(self._cookie).get_awards(game=game).get('data',{}).get('awards')
+            # mask digits 2-7 of the UID before it goes into the notification
             uid = str(self._uid).replace(
                 str(self._uid)[1:7], ' ▓ ▓ ▓ ▓ ▓ ▓ ▓ ', 1)
 
-            time.sleep(5)
             message = {
                 'today': today,
                 'region_name': self._region_name,
@@ -194,15 +152,10 @@ class Sign(Base):
                 'end': '',
             }
             
-            if game == 'GI':
-                job = 'Traveler'
-            elif game == 'ZZZ':
-                job = 'Proxy'
-            elif game == 'HSR':
-                job = 'Trailblazer'
-            else:
-                job = 'Captain'
-            
+            job = JOB_TITLES.get(game, 'Captain')
+
+            # already signed today: total_sign_day includes today, so today's
+            # award sits at index total_sign_day - 1
             if info_list.get('data',{}).get('is_sign') is True:
                 message['award_name'] = awards[total_sign_day - 1]['name']
                 message['award_cnt'] = awards[total_sign_day - 1]['cnt']
@@ -210,6 +163,8 @@ class Sign(Base):
                 message_list.append(self.message.format(**message))
                 return ''.join(message_list)
             else:
+                # not signed yet: total_sign_day only counts previous days, so
+                # the award we're about to claim is at index total_sign_day
                 message['award_name'] = awards[total_sign_day]['name']
                 message['award_cnt'] = awards[total_sign_day]['cnt']
             if info_list.get('data',{}).get('first_bind') is True:
@@ -217,29 +172,17 @@ class Sign(Base):
                 message_list.append(self.message.format(**message))
                 return ''.join(message_list)
 
-            if game == 'GI':
-                OS_ACT_ID = CONFIG.GI_OS_ACT_ID
-                OS_SIGN_URL = CONFIG.GI_OS_SIGN_URL
-            elif game == 'ZZZ':
-                OS_ACT_ID = CONFIG.ZZZ_OS_ACT_ID
-                OS_SIGN_URL = CONFIG.ZZZ_OS_SIGN_URL
-            elif game == 'HSR':
-                OS_ACT_ID = CONFIG.HSR_OS_ACT_ID
-                OS_SIGN_URL = CONFIG.HSR_OS_SIGN_URL
-            else:
-                OS_ACT_ID = CONFIG.HI3_OS_ACT_ID
-                OS_SIGN_URL = CONFIG.HI3_OS_SIGN_URL
-                
+            OS_ACT_ID = getattr(CONFIG, f'{game}_OS_ACT_ID')
+            OS_SIGN_URL = getattr(CONFIG, f'{game}_OS_SIGN_URL')
+
             data = {
                 'act_id': OS_ACT_ID
-            }         
-            try:
-                response = req.to_python(req.request(
-                    'post', OS_SIGN_URL, headers=self.get_header(game=game),
-                    data=json.dumps(data, ensure_ascii=False)).text)
-            except Exception as e:
-                # raise
-                return e.message
+            }
+            # space out the sign request so multiple accounts don't hammer the endpoint
+            time.sleep(5)
+            response = req.to_python(req.request(
+                'post', OS_SIGN_URL, headers=self.get_header(game=game),
+                data=json.dumps(data, ensure_ascii=False)).text)
             code = response.get('retcode', 99999)
             log.debug('Sign response:')
             log.debug(response)
