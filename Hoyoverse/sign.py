@@ -139,7 +139,7 @@ class Sign(Base):
             return req.to_python(response)
         except Exception:
             log.error('failure in get_info')
-            # let the per-account handler in Hoyo-os.py log it and count the failure
+            # let the per-account handler in checkin.py log it and count the failure
             raise
 
     def run(self, game="GI"):
