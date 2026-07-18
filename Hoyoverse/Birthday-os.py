@@ -33,6 +33,10 @@ if __name__ == '__main__':
     #                                      or XXXX/MM/DD to repeat it every year
     for bday in bday_list:
         bday_info = bday.split(';')
+        # skip malformed entries instead of crashing the whole loop on them
+        if len(bday_info) < 2 or (bday_info[0] == '!' and len(bday_info) < 3):
+            log.warning(f'Skipping malformed BIRTHDAYS entry: {bday!r}')
+            continue
         # Check if the item is not for ordinary birthday but for a custom announcement
         if bday_info[0] == '!' and (today.strftime("%Y/%m/%d") == bday_info[1].strip()
                                     or (bday_info[1].strip()[:4] == "XXXX" and today.strftime("%m/%d") == bday_info[1].strip()[-5:])):

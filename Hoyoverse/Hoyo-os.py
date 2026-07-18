@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from settings import log, CONFIG
-from sign import Sign
+from sign import Sign, CookieExpired
 from notify import Notify
 
 load_dotenv()
@@ -45,8 +45,9 @@ if __name__ == '__main__':
 
 
     total_success_num: int = 0
-    total_fail_num: int = 0  
-    msg_summary = ''  
+    total_fail_num: int = 0
+    msg_summary = ''
+    expired_accounts = []
     try:
         for game in GAMES:
             OS_COOKIE = os.getenv(f'{game}_OS_COOKIE')
@@ -66,6 +67,11 @@ if __name__ == '__main__':
                     msg = f'	NO.{i} Account:{Sign(cookie).run(game=game)}'
                     msg_list.append(msg)
                     success_num = success_num + 1
+                except CookieExpired as e:
+                    log.error(f'Cookie expired for {game} account NO.{i}: {e}')
+                    msg_list.append(f'Cookie expired for this account ({e}).')
+                    expired_accounts.append(f'{game} NO.{i}')
+                    fail_num = fail_num + 1
                 except Exception as e:
                     log.debug('Error occurred during sign-in process:')
                     log.debug(e)
@@ -93,11 +99,25 @@ if __name__ == '__main__':
         
         if total_fail_num > 0:
             notify.send(msg="Error occured @everyone", isSummary=allow_summary, embed=False)
+
+        # expired cookies need action from the user, so they get a distinct,
+        # actionable alert instead of just a generic failure count
+        if expired_accounts:
+            notify.send(
+                msg=f'@everyone Cookie expired for: {", ".join(expired_accounts)}. '
+                    'Log in to hoyolab.com again and update the cookie in .env.',
+                isSummary=allow_summary, embed=False)
     except Exception as e:
         log.error('An error occurred during the check-in process:')
         log.error(e)
         ret = 1
-        
+        # still try to tell Discord - a silent crash on a headless Pi would
+        # otherwise go unnoticed until rewards stop arriving
+        try:
+            notify.send(status='CRASHED', msg=f'@everyone Check-in run crashed: {e}', embed=False)
+        except Exception as notify_error:
+            log.error(f'Failed to send crash notification: {notify_error}')
+
     if ret != 0:
         log.error('program terminated with errors')
         exit(ret)

@@ -27,8 +27,10 @@ A game is only checked in when its cookie variable is set — just leave out the
 - Dependencies:
 
 ```
-pip install requests python-dotenv discord-webhook
+pip install -r requirements.txt
 ```
+
+(That installs `requests`, `python-dotenv`, and `discord-webhook`.)
 
 ## Configuration
 
@@ -41,6 +43,7 @@ Create a `.env` file in the project root (or set the variables as environment va
 | `DISCORD_WEBHOOK_SUMMARY` | optional | A second webhook for a short summary, keeping the main channel clean. |
 | `PUSH_CONFIG` | optional | JSON config for pushing to a custom notification API (see [notify.py](Hoyoverse/notify.py)). |
 | `BIRTHDAYS` | for birthday helper | Birthday/announcement entries, separated by `#` (format below). |
+| `DEBUG` | optional | Set to any non-empty value to enable verbose debug logging. |
 
 ### Getting your cookie
 
@@ -84,6 +87,10 @@ Since the rewards reset daily, you'll want to schedule it — e.g. with cron on 
 0 16 * * * cd /path/to/MiHoyoverse-AutoCheckin && python Hoyoverse/Hoyo-os.py
 0 8  * * * cd /path/to/MiHoyoverse-AutoCheckin && python Hoyoverse/Birthday-os.py
 ```
+
+> **Timing tip:** the daily reward resets at midnight **UTC+8**. Schedule the check-in a few minutes after that moment in *your machine's* timezone — e.g. `5 0 * * *` if the machine runs on UTC+8 (Philippine time), or `5 16 * * *` on UTC. The small margin avoids racing the reset itself.
+
+The repo also ships two wrapper scripts for cron, [start_mihoyoversehelper.sh](start_mihoyoversehelper.sh) and [start_birthdayhelper.sh](start_birthdayhelper.sh), which `cd` into the repo, run the script with the venv's Python, and write the run's output to `last_*_run.log`. Independent of how it's launched, the app keeps a rotating history log in `hoyohelper.log`.
 
 ## Project structure
 

@@ -1,25 +1,38 @@
 # settings
 import logging
 import json
+import os
+import time
 import requests
 from dotenv import load_dotenv
+from logging.handlers import RotatingFileHandler
 from requests.exceptions import HTTPError
 
 load_dotenv()
 
 __all__ = ['log', 'CONFIG', 'req']
 
+_LOG_FORMAT = '%(asctime)s %(levelname)s %(message)s'
+_LOG_DATEFMT = '%Y-%m-%dT%H:%M:%S'
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s',
-    datefmt='%Y-%m-%dT%H:%M:%S')
+    format=_LOG_FORMAT,
+    datefmt=_LOG_DATEFMT)
 
 log = logger = logging.getLogger()
 
+# Also log to a rotating file in the repo root so cron runs can be diagnosed
+# after the fact (cron discards stdout/stderr unless redirected)
+_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, 'hoyohelper.log')
+_file_handler = RotatingFileHandler(_LOG_FILE, maxBytes=512_000, backupCount=2, encoding='utf-8')
+_file_handler.setFormatter(logging.Formatter(_LOG_FORMAT, datefmt=_LOG_DATEFMT))
+log.addHandler(_file_handler)
+
 class _Config:
     GIH_VERSION = '4.1'
-    LOG_LEVEL = logging.INFO
-    # LOG_LEVEL = logging.DEBUG
+    # set DEBUG=1 in the environment (or .env) for verbose logging
+    LOG_LEVEL = logging.DEBUG if os.getenv('DEBUG') else logging.INFO
 
     # HoYoLAB
     LANG = 'en-us'
@@ -97,6 +110,8 @@ class HttpRequest(object):
                 log.error(f'The NO.{i + 1} request failed, retrying...')
             else:
                 return response
+            if i < max_retry:
+                time.sleep(2 * (i + 1))  # brief backoff so transient network blips can clear
 
         raise Exception(f'All {max_retry + 1} HTTP requests failed, die.')
 
