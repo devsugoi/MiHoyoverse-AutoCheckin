@@ -3,4 +3,4 @@
 cd "$(dirname "$0")"
 # last_checkin_run.log is overwritten each run and catches even early crashes
 # (missing modules etc.); rotating history lives in hoyohelper.log
-/home/matt/.venv/bin/python Hoyoverse/Hoyo-os.py > last_checkin_run.log 2>&1
+/home/matt/.venv/bin/python Hoyoverse/checkin.py > last_checkin_run.log 2>&1

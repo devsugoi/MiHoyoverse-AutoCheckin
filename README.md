@@ -76,16 +76,16 @@ python HoyoHelperStart.py
 Or run the pieces individually:
 
 ```
-python Hoyoverse/Hoyo-os.py       # daily check-in only
-python Hoyoverse/Birthday-os.py   # birthday greetings only
+python Hoyoverse/checkin.py    # daily check-in only
+python Hoyoverse/birthday.py   # birthday greetings only
 ```
 
 Since the rewards reset daily, you'll want to schedule it — e.g. with cron on a Raspberry Pi / Linux box:
 
 ```
 # crontab -e
-0 16 * * * cd /path/to/MiHoyoverse-AutoCheckin && python Hoyoverse/Hoyo-os.py
-0 8  * * * cd /path/to/MiHoyoverse-AutoCheckin && python Hoyoverse/Birthday-os.py
+0 16 * * * cd /path/to/MiHoyoverse-AutoCheckin && python Hoyoverse/checkin.py
+0 8  * * * cd /path/to/MiHoyoverse-AutoCheckin && python Hoyoverse/birthday.py
 ```
 
 > **Timing tip:** the daily reward resets at midnight **UTC+8**. Schedule the check-in a few minutes after that moment in *your machine's* timezone — e.g. `5 0 * * *` if the machine runs on UTC+8 (Philippine time), or `5 16 * * *` on UTC. The small margin avoids racing the reset itself.
@@ -97,11 +97,11 @@ The repo also ships two wrapper scripts for cron, [start_mihoyoversehelper.sh](s
 | File | Purpose |
 | --- | --- |
 | [HoyoHelperStart.py](HoyoHelperStart.py) | Entry point that runs the check-in and birthday scripts. |
-| [Hoyoverse/Hoyo-os.py](Hoyoverse/Hoyo-os.py) | Main check-in driver: loops over games and accounts, tallies results, sends notifications. |
+| [Hoyoverse/checkin.py](Hoyoverse/checkin.py) | Main check-in driver: loops over games and accounts, tallies results, sends notifications. |
 | [Hoyoverse/sign.py](Hoyoverse/sign.py) | The actual sign-in logic against the HoYoLAB API. |
 | [Hoyoverse/settings.py](Hoyoverse/settings.py) | Per-game API endpoints, headers, logging, and a retrying HTTP client. |
 | [Hoyoverse/notify.py](Hoyoverse/notify.py) | Discord webhook + custom push notification handler. |
-| [Hoyoverse/Birthday-os.py](Hoyoverse/Birthday-os.py) | Birthday greeting / announcement helper. |
+| [Hoyoverse/birthday.py](Hoyoverse/birthday.py) | Birthday greeting / announcement helper. |
 
 ## Credits & disclaimer
 
