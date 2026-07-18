@@ -6,6 +6,16 @@ from settings import log, CONFIG, req
 # What each game calls the player, used in the check-in status message
 JOB_TITLES = {'GI': 'Traveler', 'ZZZ': 'Proxy', 'HSR': 'Trailblazer', 'HI3': 'Captain'}
 
+# HoYoLAB retcodes that mean the cookie can no longer authenticate:
+#   -100  = cookies are not valid / expired
+#   10001 = invalid cookies (variant used by some endpoints)
+#   10103 = cookie is valid but has no HoYoLAB account bound to it
+COOKIE_EXPIRED_RETCODES = (-100, 10001, 10103)
+
+
+class CookieExpired(Exception):
+    """The API rejected the account cookie - the user must log in again."""
+
 
 class Base(object):
     def __init__(self, cookies: str = None):
@@ -80,6 +90,8 @@ class Sign(Base):
         user_game_roles = Roles(self._cookie).get_roles(game=game)
         log.debug('user_game_roles')
         log.debug(user_game_roles)
+        if user_game_roles.get('retcode') in COOKIE_EXPIRED_RETCODES:
+            raise CookieExpired(user_game_roles.get('message', 'Cookie expired'))
         role_list = user_game_roles.get('data', {}).get('list', [])
         if game == 'HSR': # HSR is a special case as it uses different keys for the role list
             role_list = [user_game_roles.get('data', {}).get('user_info', [])]
@@ -132,8 +144,10 @@ class Sign(Base):
 
     def run(self, game="GI"):
         info_list = self.get_info(game=game)
+        if info_list.get('retcode') in COOKIE_EXPIRED_RETCODES:
+            raise CookieExpired(info_list.get('message', 'Cookie expired'))
         message_list = []
-        
+
         if info_list:
             today = info_list.get('data',{}).get('today')
             total_sign_day = info_list.get('data',{}).get('total_sign_day')
@@ -188,6 +202,12 @@ class Sign(Base):
             log.debug(response)
             # 0:      success
             # -5003:  already checked in
+            if code in COOKIE_EXPIRED_RETCODES:
+                raise CookieExpired(response.get('message', 'Cookie expired'))
+            # a geetest challenge in the response means HoYoLAB wants a captcha
+            # solved - the check-in did NOT count even though retcode is 0
+            if (response.get('data') or {}).get('gt'):
+                raise Exception('Captcha (geetest) triggered on the sign endpoint; please check in manually today')
             if code != 0:
                 message_list.append(response)
                 return ''.join(message_list)
